@@ -1,6 +1,6 @@
 # nodejs-hw (branch: `01-express`)
 
-Minimal Express server for a notes collection. It demonstrates basic routing, middleware, logging, and error handling. The project uses **ESM** (`"type": "module"`) and **ESLint flat config** (`eslint.config.mjs`, no `.eslintrc.json`).
+Minimal Express server for a notes collection. It demonstrates basic routing, middleware, logging, and error handling. The project uses **ESM** (`"type": "module"`) and **ESLint flat config** (`eslint.config.mjs`).
 
 ## Features
 
@@ -21,8 +21,6 @@ Minimal Express server for a notes collection. It demonstrates basic routing, mi
 
 - Node.js 20+
 - Express 4
-- ESM modules (`"type": "module"`)
+- ESM modules
 - ESLint flat config + Prettier
 - pino / pino-http (with `pino-pretty` in dev)
-
-## Project Structure
