@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import pinoHttp from 'pino-http';
+import { connectMongoDB } from './db/connectMongoDB.js';
 
 const app = express();
 
@@ -52,6 +53,9 @@ app.use((err, req, res, _next) => {
 });
 
 const PORT = Number(process.env.PORT) || 3000;
+
+await connectMongoDB();
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
