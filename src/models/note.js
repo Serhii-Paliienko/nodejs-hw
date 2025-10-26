@@ -30,7 +30,10 @@ const noteSchema = new Schema(
       default: 'Todo',
     },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    versionKey: false,
+  },
 );
 
 const Note = model('note', noteSchema);
