@@ -7,13 +7,21 @@ import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import noteRoutes from './routes/notesRoutes.js';
 import { errors as celebrateErrorHandler } from 'celebrate';
+import cookieParser from 'cookie-parser';
+import authRoutes from './routes/authRoutes.js';
 
 const app = express();
 
 app.use(logger);
-app.use(cors());
+app.set('trust proxy', 1);
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
+app.use('/', authRoutes);
 app.use('/', noteRoutes);
+
+app.get('/', (_req, res) => res.json({ ok: true }));
+app.get('/favicon.ico', (_req, res) => res.status(204).end());
 
 app.use(notFoundHandler);
 app.use(celebrateErrorHandler());
