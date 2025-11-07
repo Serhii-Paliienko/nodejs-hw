@@ -1,181 +1,65 @@
-# Notes API — Express + MongoDB
+# Notes API (Express + MongoDB)
 
-A simple REST API for managing notes. Built with **Express**, **MongoDB** (via **Mongoose**), and **ES Modules**. Includes structured routing, request logging, CORS, and centralized error handling.
+Minimal REST API with user auth (cookies) and per-user private notes.
 
-> Requires **Node.js 20+**.
-
----
-
-## Features
-
-- MongoDB connection via Mongoose (`MONGO_URL`).
-- Request logging with **pino-http**.
-- CORS enabled.
-- Centralized error handler (consistent JSON errors).
-- Clean project structure (`routes/`, `controllers/`, `models/`, `middleware/`, `db/`).
-- Timestamps on models (`createdAt`, `updatedAt`).
-
----
-
-## Getting Started
-
+## Quickstart
 ```bash
-git clone <your-repo-url>
-cd nodejs-hw
-cp .env.example .env   # fill in MONGO_URL
 npm i
-npm run dev            # nodemon src/server.js
-# or
-npm start              # node src/server.js
+cp .env.example .env   # set MONGO_URL, PORT
+npm run dev            # or: npm start
 ```
-
-Expected startup logs:
+Expected:
 ```
 ✅ MongoDB connection established successfully
-Server is running on http://localhost:3000
+Server is running on http://localhost:<PORT>
 ```
 
----
-
-## Environment Variables
-
-Create a **.env** file (names must match):
+## Environment
 ```
 PORT=3000
-MONGO_URL=mongodb+srv://<user>:<pass>@<cluster>/<db>?retryWrites=true&w=majority
+MONGO_URL=<your-mongodb-connection-string>
+NODE_ENV=development
 ```
+> Do not commit `.env`.
 
-An example file **.env.example** is included.
+## Auth model
+- Cookies: `accessToken` (15m), `refreshToken` (1d), `sessionId` (1d)
+- Cookie options: `{ httpOnly: true, secure: true, sameSite: 'none' }`
+- Sessions rotate on **login** and **refresh**
+- Protected routes require `accessToken` cookie
 
----
+## Endpoints
 
-## Project Structure
+### Health
+- `GET /` → `{ "ok": true }`
 
-```
-src/
-  controllers/
-    notesController.js
-  db/
-    connectMongoDB.js
-  middleware/
-    errorHandler.js
-    logger.js
-    notFoundHandler.js
-  models/
-    Note.js
-  routes/
-    notesRoutes.js
-  server.js
-notes.json
-```
+### Auth (public)
+- `POST /auth/register` — body: `{ "email": "user@test.local", "password": "qwertyui" }` → `201` + auth cookies
+- `POST /auth/login` — same body → `200` + rotated cookies (or `401`)
+- `POST /auth/refresh` — from cookies → `200 { "message": "Session refreshed" }`
+- `POST /auth/logout` — clears cookies → `204`
 
-- `server.js` — loads dotenv, sets up Express/CORS/pino, connects to MongoDB **before** starting the server, mounts routes, and wires `notFoundHandler` + `errorHandler`.
-- `db/connectMongoDB.js` — MongoDB connection helper (logs a success message).
-- `middleware/logger.js` — `pino-http` setup (pretty logging in development is supported).
-- `middleware/notFoundHandler.js` — returns `{ "message": "Route not found" }` for unknown routes.
-- `middleware/errorHandler.js` — uses `err.status || err.statusCode || 500`, returns `{ "message": err.message }`.
-- `routes/notesRoutes.js` — full paths (`/notes`, `/notes/:noteId`) mounted at `'/'` in `server.js`.
+### Notes (protected)
+- `GET /notes` → list only current user's notes
+- `POST /notes` — body: `{ "title": "...", "content": "...", "tag": "..." }` → `201`
+- `GET /notes/:id` → note or `404`
+- `PATCH /notes/:id` → updated note or `404`
+- `DELETE /notes/:id` → deleted note or `404`
 
----
+## Validation
+- Celebrate/Joi for bodies
+- Custom email regex (shared in register/login)
+- Password: min 8 chars
 
-## Data Model
-
-**Note**
-
+## CORS
+Enable credentials and your frontend origin. In cloud (e.g. Render) use:
 ```js
-title:   { type: String, required: true,  trim: true }
-content: { type: String, required: false, trim: true, default: "" }
-tag:     { type: String, enum: ["Work","Personal","Meeting","Shopping","Ideas","Travel","Finance","Health","Important","Todo"], default: "Todo" }
+app.set('trust proxy', 1);
 ```
 
-Schema options:
-```js
-{ timestamps: true } // automatically adds createdAt / updatedAt
-```
-
----
-
-## API
-
-Base URL: `http://localhost:3000` (or your deployed URL)
-
-| Method | Path               | Success | Response Body         |
-|------: |--------------------| ------: |-----------------------|
-|  GET   | `/notes`           |   200   | Array of notes        |
-|  GET   | `/notes/:noteId`   |   200   | Note object           |
-|  POST  | `/notes`           |   201   | Created note object   |
-| PATCH  | `/notes/:noteId`   |   200   | Updated note object   |
-| DELETE | `/notes/:noteId`   |   200   | **Deleted note object** |
-
-Error responses:
-- Unknown route → **404** `{ "message": "Route not found" }`
-- Note not found (valid but missing id) → **404** `{ "message": "Note not found" }`
-- Other errors (including validation) → **500** `{ "message": "<error>" }`
-
----
-
-## Examples (cURL)
-
-```bash
-# list
-curl -i http://localhost:3000/notes
-
-# create
-curl -i -X POST http://localhost:3000/notes   -H "Content-Type: application/json"   -d '{"title":"Smoke","content":"hello","tag":"Ideas"}'
-
-# get by id
-curl -i http://localhost:3000/notes/<_id>
-
-# partial update
-curl -i -X PATCH http://localhost:3000/notes/<_id>   -H "Content-Type: application/json"   -d '{"title":"Updated"}'
-
-# delete
-curl -i -X DELETE http://localhost:3000/notes/<_id>
-
-# non-existing valid id
-curl -i http://localhost:3000/notes/000000000000000000000000
-
-# unknown route
-curl -i http://localhost:3000/does-not-exist
-```
-
-> Use only enum values for `tag` (see model above).
-
----
-
-## Seeding (optional)
-
-A sample dataset is available in **`notes.json`**. Import it into the `notes` collection of the database referenced by your `MONGO_URL` (the model name `note` maps to collection `notes`).
-
----
-
-## Deployment (Render)
-
-1. Create a new **Web Service** from your repository/branch.
-2. Set environment variables: `PORT`, `MONGO_URL`.
-3. Ensure MongoDB Atlas → **Network Access** allows connections (e.g., `0.0.0.0/0` for testing).
-4. After start, check logs for: `✅ MongoDB connection established successfully`.
-5. Test the endpoints using the public URL.
-
----
-
-## NPM Scripts
-
-```jsonc
-{
-  "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
-    "lint": "eslint .",
-    "format": "prettier -w ."
-  }
-}
-```
-
----
-
-## Troubleshooting
-
-- **POST returns 500 with validation error**: make sure you send JSON (Body → raw → JSON) and include a `title`; `tag` must be one of the enum values.
-- **ObjectId errors (CastError)**: the `:noteId` path segment is a placeholder — send a real 24‑char hex id (e.g., value returned from POST).
-- **Empty responses**: verify your `MONGO_URL` points to the database where you imported `notes.json`.
+## Postman (short)
+1) Register → `201`, cookies set  
+2) GET `/notes` with cookies → `200 []`  
+3) Create note → `201`  
+4) Refresh → `200`  
+5) Logout → `204` → GET `/notes` → `401`
