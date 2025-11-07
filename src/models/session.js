@@ -2,7 +2,7 @@ import { Schema, model } from 'mongoose';
 
 const sessionSchema = new Schema(
   {
-    userId: { type: Schema.Types.ObjectId, ref: 'user', required: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     accessToken: { type: String, required: true },
     refreshToken: { type: String, required: true },
     accessTokenValidUntil: { type: Date, required: true },
@@ -14,6 +14,6 @@ const sessionSchema = new Schema(
   },
 );
 
-const Session = model('session', sessionSchema);
+const Session = model('Session', sessionSchema);
 
 export default Session;

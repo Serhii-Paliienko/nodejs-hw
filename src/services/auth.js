@@ -24,14 +24,15 @@ export const setSessionCookies = (res, session) => {
     sameSite: 'none',
   };
 
-  (res.cookie('accessToken', session.accessToken, {
+  res.cookie('accessToken', session.accessToken, {
     ...common,
     maxAge: FIFTEEN_MINUTES,
-  }),
-    res.cookie('refreshToken', session.refreshToken, {
-      ...common,
-      maxAge: ONE_DAY,
-    }));
+  });
+
+  res.cookie('refreshToken', session.refreshToken, {
+    ...common,
+    maxAge: ONE_DAY,
+  });
 
   res.cookie('sessionId', String(session._id), {
     ...common,

@@ -17,11 +17,13 @@ export const getAllNotes = async (req, res) => {
     filter.$text = { $search: search.trim() };
   }
 
-  const totalNotes = await Note.countDocuments(filter);
-  const notes = await Note.find(filter)
-    .sort({ createdAt: -1 })
-    .skip((pageNum - 1) * perPageNum)
-    .limit(perPageNum);
+  const [totalNotes, notes] = await Promise.all([
+    Note.countDocuments(filter),
+    Note.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((pageNum - 1) * perPageNum)
+      .limit(perPageNum),
+  ]);
 
   const totalPages = Math.ceil(totalNotes / perPageNum) || 1;
 

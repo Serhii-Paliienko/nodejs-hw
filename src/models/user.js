@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { emailRegexp } from '../constants/tags.js';
+import { emailRegexp } from '../constants/regexps.js';
 
 const userSchema = new Schema(
   {
@@ -29,6 +29,6 @@ userSchema.pre('save', function (next) {
   next();
 });
 
-const User = model('user', userSchema);
+const User = model('User', userSchema);
 
 export default User;
